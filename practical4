@@ -1,0 +1,40 @@
+import pandas as pd
+
+# Load the dataset (ensure the CSV file is in your working directory or provide full path)
+df = pd.read_csv('facebook_metrics.csv')
+
+# Preview the dataset
+df.head()
+
+
+# Subset with only selected numeric columns
+subset_numeric = df[['Page total likes', 'Post Month', 'Post Weekday', 'Post Hour', 'like', 'share']]
+subset_numeric.head()
+
+
+# Subset with only posts of type 'Photo'
+subset_photo = df[df['Type'] == 'Photo']
+subset_photo.head()
+
+
+# Split and merge example
+df_part1 = df.iloc[:100]
+df_part2 = df.iloc[100:]
+
+# Merge vertically (row-wise)
+merged_df = pd.concat([df_part1, df_part2])
+merged_df.shape
+# Sort by number of likes in descending order
+sorted_df = df.sort_values(by='like', ascending=False)
+sorted_df[['Type', 'like']].head()
+
+
+
+# Transpose only the first row for readability
+transposed = df.head(1).T
+transposed
+# Check original shape
+df.shape
+# Reshape like, share, comment columns using melt
+reshaped_df = df[['like', 'share', 'comment']].melt(var_name='Interaction Type', value_name='Count')
+reshaped_df.head()
