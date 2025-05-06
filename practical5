@@ -1,0 +1,53 @@
+# Import required libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+
+# Load datasets
+air = pd.read_csv("C:/Users/TECHNORBIT/OneDrive/Desktop/DSBDA Praticals/AirQuality.csv", sep=';')
+heart = pd.read_csv("C:/Users/TECHNORBIT/OneDrive/Desktop/DSBDA Praticals/heart.csv")
+
+# --- Data Cleaning ---
+# Fill missing values with column mean # Replace NaN with column means
+air.fillna(air.mean(numeric_only=True), inplace=True)
+heart.fillna(heart.mean(numeric_only=True), inplace=True)
+
+#Data integration
+air['ID'] = range(1, len(air)+1)
+heart['ID'] = range(1, len(heart)+1)
+merged_df = pd.merge(air, heart, on='ID', how='inner')
+# print(merged_df)
+
+# --- Data Transformation ---
+# Normalize numeric columns in heart dataset (excluding 'output')
+scaler = StandardScaler()
+cols_to_scale = heart.select_dtypes(include=['float64', 'int64']).columns.drop('output')
+heart[cols_to_scale] = scaler.fit_transform(heart[cols_to_scale])
+
+# Optional transformation: square root of 'Wind' if exists
+if 'Wind' in air.columns:
+    air['Wind'] = np.sqrt(air['Wind'])
+
+# --- Error Correction ---
+# Replace negative values in 'Ozone' (if present) with NaN and fill with mean
+if 'Ozone' in air.columns:
+    air['Ozone'] = air['Ozone'].apply(lambda x: np.nan if x < 0 else x)
+    air['Ozone'].fillna(air['Ozone'].mean(), inplace=True)
+
+# --- Data Model Building ---
+# Train logistic regression model on heart data
+X = heart.drop('output', axis=1)
+y = heart['output']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+# --- Evaluation ---
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Accuracy Score:", accuracy_score(y_test, y_pred))
+
