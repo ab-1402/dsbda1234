@@ -1,0 +1,77 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+
+
+air_df = pd.read_csv("C:/Users/TECHNORBIT/OneDrive/Desktop/DSBDA Praticals/AirQuality.csv", sep=';')
+heart_df= pd.read_csv("C:/Users/TECHNORBIT/OneDrive/Desktop/DSBDA Praticals/heart.csv")
+# Check missing values
+print("Heart Dataset:\n", heart_df.isnull().sum())
+print("\nAir Quality Dataset:\n", air_df.isnull().sum())
+
+# Fill missing values using mean strategy
+imputer = SimpleImputer(strategy='mean')
+heart_df_cleaned = pd.DataFrame(imputer.fit_transform(heart_df), columns=heart_df.columns)
+air_df_cleaned = pd.DataFrame(imputer.fit_transform(air_df), columns=air_df.columns)
+
+
+
+# Reset index to align if needed
+air_df.reset_index(drop=True, inplace=True)
+heart_df.reset_index(drop=True, inplace=True)
+
+# Concatenate both datasets horizontally
+combined_df = pd.concat([air_df, heart_df], axis=1)
+
+# Preview combined data
+combined_df.head()
+
+
+from sklearn.preprocessing import MinMaxScaler
+
+# Initialize the scaler
+scaler = MinMaxScaler()
+
+# Choose numeric columns to scale
+columns_to_scale = ['AQI', 'PM10', 'PM2_5', 'NO2', 'SO2', 'O3', 
+                    'Temperature', 'Humidity', 'WindSpeed', 
+                    'trestbps', 'chol', 'thalach', 'oldpeak']
+
+# Apply MinMaxScaler to the selected columns
+combined_df[columns_to_scale] = scaler.fit_transform(combined_df[columns_to_scale])
+
+
+
+
+# Replace negative numbers in numeric columns with NaN
+numeric_cols = combined_df.select_dtypes(include='number').columns
+combined_df[numeric_cols] = combined_df[numeric_cols].applymap(lambda x: np.nan if x < 0 else x)
+
+# Fill missing values with median
+combined_df.fillna(combined_df.median(numeric_only=True), inplace=True)
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Split data into features and target
+X = combined_df.drop('target', axis=1)
+y = combined_df['target']
+
+# Split into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train Random Forest model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
